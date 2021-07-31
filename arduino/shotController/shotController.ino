@@ -27,25 +27,44 @@
 //       initialTestValue = Variable to hold value of INITIALIZE for comparison
 //-----------------------------------------------------------------------------
 
-// Definitions
+// Definitions:
+
+//  - Initialization of Constant variables
+#define FULL                 0x03
+#define RELOAD_BUTTON_PIN       2
+
+//  - Initialization of In Game variables
+#define INIT_FIRE_PACKET_SIZE   3
+
+//  - Testing
 #define INITIALIZE             -1
 #define TEST_PLAYER_ID         10
 #define TEST_TEAM_ID           10
 #define TEST_DAMAGE            10
 #define TEST_AMMO_COUNT        10
 #define TEST_MAX_AMMO          10
-#define TEST_RELOAD_DELAY_MS 1000
+#define TEST_RELOAD_DELAY_MS 10000
 #define TEST_FIRING_DELAY_MS 1000
-#define INIT_FIRE_PACKET_SIZE   3
 
 //-----------------------------------------------------------------------------
 
-// Real Variables
+// Constant Variables
+const byte full = FULL;
+
+const byte reloadButtonPin = RELOAD_BUTTON_PIN;
+
+//-----------------------------------------------------------------------------
+
+// In Game Variables
 byte playerId = INITIALIZE;
 byte teamId = INITIALIZE;
 byte damage = INITIALIZE;
-byte ammoCount = INITIALIZE;
+volatile byte ammoCount = INITIALIZE;
 byte maxAmmo = INITIALIZE;
+
+volatile bool isDelayed = false;
+
+volatile short reloadInterruptTime = INITIALIZE;
 
 short reloadDelay = INITIALIZE;
 short firingDelay = INITIALIZE;
@@ -66,10 +85,15 @@ void setup()
 {
   if (consoleDebug) Serial.begin(9600);
   initializeShotController();
+  initializeReload();
 }
 
 void loop() 
 {
+  if (millis() - reloadInterruptTime > reloadDelay)
+  {
+    isDelayed = false; 
+  }
 }
 
 void initializeShotController() 
@@ -147,6 +171,48 @@ bool wasInitializationSuccessful()
   }
 
   return wasSuccessful;
+}
+
+void initializeReload()
+{
+  pinMode(reloadButtonPin, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(reloadButtonPin), reload, FALLING);
+  if (consoleDebug) Serial.println("Reload initialized");
+}
+
+void reload() 
+{
+  if (isDelayed == false)
+  {
+    ammoCount = maxAmmo;
+    notifyFullMagazine();
+    delayForReload();
+  }
+  else
+  {
+    if (consoleDebug) Serial.println("Currently Delayed");
+  }
+}
+
+void notifyFullMagazine()
+{
+  playSound(full);
+  if (consoleDebug) Serial.println("Magazine is full");
+}
+
+void delayForReload()
+{
+  isDelayed = true;
+  reloadInterruptTime = millis();
+}
+
+void playSound(byte soundCode)
+{
+  if (consoleDebug)
+  {
+    Serial.print("Sending sound code: ");
+    Serial.println(soundCode);
+  }
 }
 
 // EOF ========================================================================
