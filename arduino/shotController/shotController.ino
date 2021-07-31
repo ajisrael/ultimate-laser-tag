@@ -64,8 +64,89 @@ byte initialTestValue = INITIALIZE;
 
 void setup() 
 {
+  if (consoleDebug) Serial.begin(9600);
+  initializeShotController();
 }
+
 void loop() 
 {
 }
+
+void initializeShotController() 
+{
+  receivePlayerData();
+  receiveGunProfile();
+  buildFirePacket();
+  notifyShotControllerState();
+}
+
+void receivePlayerData() 
+{
+  if (isolatedTest) 
+  {
+    playerId = TEST_PLAYER_ID;
+    teamId = TEST_TEAM_ID;
+  } 
+  else 
+  {
+    if (consoleDebug) Serial.println("Requesting player data from main board.");
+  }
+}
+
+void receiveGunProfile() 
+{
+  if (isolatedTest) 
+  {
+    damage = TEST_DAMAGE;
+    ammoCount = TEST_AMMO_COUNT;
+    maxAmmo = TEST_MAX_AMMO;
+    reloadDelay = TEST_RELOAD_DELAY_MS;
+    firingDelay = TEST_FIRING_DELAY_MS;
+  } 
+  else 
+  {
+    if (consoleDebug) Serial.println("Requesting gun profile from main board.");
+  }
+}
+
+void buildFirePacket() 
+{
+  firePacket[0] = playerId;
+  firePacket[1] = teamId;
+  firePacket[2] = damage;
+  if (consoleDebug) Serial.println("Fire packet built.");
+}
+
+void notifyShotControllerState() 
+{
+  if (wasInitializationSuccessful()) 
+  {
+    if (consoleDebug) Serial.println("Shot Controller Initialization: SUCCESSFUL.");
+  } 
+  else 
+  {
+    if (consoleDebug) Serial.println("Shot Controller Initialization: FAILED.");
+  }
+}
+
+bool wasInitializationSuccessful() 
+{
+  bool wasSuccessful = true;
+  
+  if      (playerId    == initialTestValue) { wasSuccessful = false; }
+  else if (teamId      == initialTestValue) { wasSuccessful = false; }
+  else if (damage      == initialTestValue) { wasSuccessful = false; }
+  else if (ammoCount   == initialTestValue) { wasSuccessful = false; }
+  else if (maxAmmo     == initialTestValue) { wasSuccessful = false; }
+  else if (reloadDelay == initialTestValue) { wasSuccessful = false; }
+  else if (firingDelay == initialTestValue) { wasSuccessful = false; }
+  
+  for (byte i = 0; i < firePacketSize; i++) 
+  {
+    if (firePacket[i]  == initialTestValue) { wasSuccessful = false; }
+  }
+
+  return wasSuccessful;
+}
+
 // EOF ========================================================================
