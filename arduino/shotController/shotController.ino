@@ -25,4 +25,47 @@
 //       isolatedTest = Enables test variables when not connected to main board 
 //       consoleDebug = Enables console output for testing
 //       initialTestValue = Variable to hold value of INITIALIZE for comparison
+//-----------------------------------------------------------------------------
+
+// Definitions
+#define INITIALIZE             -1
+#define TEST_PLAYER_ID         10
+#define TEST_TEAM_ID           10
+#define TEST_DAMAGE            10
+#define TEST_AMMO_COUNT        10
+#define TEST_MAX_AMMO          10
+#define TEST_RELOAD_DELAY_MS 1000
+#define TEST_FIRING_DELAY_MS 1000
+#define INIT_FIRE_PACKET_SIZE   3
+
+//-----------------------------------------------------------------------------
+
+// Real Variables
+byte playerId = INITIALIZE;
+byte teamId = INITIALIZE;
+byte damage = INITIALIZE;
+byte ammoCount = INITIALIZE;
+byte maxAmmo = INITIALIZE;
+
+short reloadDelay = INITIALIZE;
+short firingDelay = INITIALIZE;
+
+byte firePacket[] = {playerId, teamId, damage};
+byte firePacketSize = INIT_FIRE_PACKET_SIZE;
+
+//-----------------------------------------------------------------------------
+
+// Test Variables
+bool isolatedTest = true;
+bool consoleDebug = true;
+byte initialTestValue = INITIALIZE;
+
+//-----------------------------------------------------------------------------
+
+void setup() 
+{
+}
+void loop() 
+{
+}
 // EOF ========================================================================
