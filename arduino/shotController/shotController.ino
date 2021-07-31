@@ -152,7 +152,7 @@ void notifyShotControllerState()
     if (consoleDebug) Serial.println("Shot Controller Initialization: FAILED.");
   }
 }
-
+ 
 bool wasInitializationSuccessful() 
 {
   bool wasSuccessful = true;
