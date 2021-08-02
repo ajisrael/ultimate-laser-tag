@@ -57,7 +57,6 @@
 // Constant Variables:
 //    Sound Codes:
 const byte full   = FULL;
-const byte locked = LOCKED;
 
 //    Pins:
 const byte reloadButtonPin = RELOAD_BUTTON_PIN;
