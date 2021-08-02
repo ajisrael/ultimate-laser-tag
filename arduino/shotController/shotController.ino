@@ -318,7 +318,20 @@ void shoot()
   }
 }
 
-void fireShot(){}
+void fireShot()
+//-----------------------------------------------------------------------------
+// Func:  Transmits IR data, immitates gun fire, and flashes the muzzle light.
+// Meth:  Calls other methods to execute the functionality.     
+//-----------------------------------------------------------------------------
+{
+  xmitPacket();
+  immitateGunFire();
+  flashMuzzleLight();
+}
+
+void xmitPacket(){}
+void immitateGunFire(){}
+void flashMuzzleLight(){}
 
 void playSound(byte soundCode)
 //-----------------------------------------------------------------------------
