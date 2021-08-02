@@ -8,6 +8,7 @@
 //       the reload() ISR.
 // Defn: 
 //    Const:
+//       EMPTY                 Sound code for indicating empty magazine
 //       FULL                  Sound code for indicating full ammo
 //       RELOAD_BUTTON_PIN     Pin the reload button is connected to
 //    In Game:
@@ -22,6 +23,7 @@
 //       TEST_RELOAD_DELAY_MS  reloadDelay test value when testing in isolation
 // Vars: 
 //    Const:
+//       empty           = Sound code for empty magazine
 //       full            = Sound code for full ammo
 //       reloadButtonPin = Pin the reload button is connected to
 //    In Game:
@@ -36,6 +38,7 @@
 //       firePacketSize = Size of firePacket
 //    Timing:
 //       reloadInterruptTime = timestamp of last reload()
+//       shotInterruptTime   = timestamp of last shot()
 //       isDelayed           = Keeps track of delay state of gun
 //    Test:
 //       isolatedTest   = Enables test vars when not connected to main board 
@@ -46,6 +49,7 @@
 // Definitions:
 
 //    Init Constant variables:
+#define EMPTY                0x00
 #define FULL                 0x03
 #define RELOAD_BUTTON_PIN       2
 
@@ -66,6 +70,7 @@
 
 // Constant Variables:
 //    Sound Codes:
+const byte empty  = EMPTY;
 const byte full   = FULL;
 
 //    Pins:
@@ -91,6 +96,7 @@ byte firePacketSize = INIT_FIRE_PACKET_SIZE;
 
 // Timing Variables:
 volatile short reloadInterruptTime = INITIALIZE;
+volatile short shotInterruptTime   = INITIALIZE;
 volatile bool isDelayed = false;
 
 //-----------------------------------------------------------------------------
@@ -283,6 +289,36 @@ void reload()
     if (consoleDebug) Serial.println("Magazine is full");
   }
 }
+
+void shoot()
+//-----------------------------------------------------------------------------
+// Func:  ISR: Shoots a laser beam with encoded data when trigger is pressed.
+// Meth:  First checks if gun is not delayed, then sets timing variables.
+//        Proceeds to check for ammo. If there is none, then plays empty sound.
+//        Otherwise, calls fireShot().
+// Voli:  isDelayed           - shoot() : set isDelayed to true
+//        shotInterruptTime   - shoot() : capture timestamp
+//        ammoCount           - shoot() : decrement for shot      
+//-----------------------------------------------------------------------------
+{
+  if (isDelayed == false)
+  {
+    isDelayed = true;
+    shotInterruptTime = millis();
+    if (ammoCount == 0)
+    {
+      playSound(empty);
+      if (consoleDebug) Serial.println("Magazine is empty");
+    }
+    else
+    {
+      fireShot();
+      if (consoleDebug) Serial.println("Shot fired");
+    }
+  }
+}
+
+void fireShot(){}
 
 void playSound(byte soundCode)
 //-----------------------------------------------------------------------------
