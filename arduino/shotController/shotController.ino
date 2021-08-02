@@ -20,17 +20,27 @@
 //       TEST_AMMO_COUNT       ammoCount test value when testing in isolation
 //       TEST_MAX_AMMO         maxAmmo test value when testing in isolation
 //       TEST_RELOAD_DELAY_MS  reloadDelay test value when testing in isolation
-// Vars: playerId     = The player's id
-//       teamId       = The id of the player's team
-//       damage       = The damage dealt to another player when hit
-//       ammoCount    = The current amount of ammo available
-//       maxAmmo      = The maximum amount of ammo allowed for the current gun
-//       reloadDelay  = The amount of time the gun delays from reloading
-//       firingDelay  = The amount of time the gun delays from firing
-//       firePacket   = Array of data sent in packet when trigger is pulled
-//       isolatedTest = Enables test variables when not connected to main board 
-//       consoleDebug = Enables console output for testing
-//       initialValue = Variable to hold value of INITIALIZE for comparison
+// Vars: 
+//    Const:
+//       full            = Sound code for full ammo
+//       reloadButtonPin = Pin the reload button is connected to
+//    In Game:
+//       playerId       = The player's id
+//       teamId         = The id of the player's team
+//       damage         = The damage dealt to another player when hit
+//       ammoCount      = The current amount of ammo available
+//       maxAmmo        = The maximum amount of ammo allowed for the current gun
+//       reloadDelay    = The amount of time the gun delays from reloading
+//       firingDelay    = The amount of time the gun delays from firing
+//       firePacket     = Array of data sent in packet when trigger is pulled
+//       firePacketSize = Size of firePacket
+//    Timing:
+//       reloadInterruptTime = timestamp of last reload()
+//       isDelayed           = Keeps track of delay state of gun
+//    Test:
+//       isolatedTest   = Enables test vars when not connected to main board 
+//       consoleDebug   = Enables console output for testing
+//       initialValue   = Variable to hold value of INITIALIZE for comparison
 //-----------------------------------------------------------------------------
 
 // Definitions:
@@ -77,7 +87,9 @@ short firingDelay       = INITIALIZE;
 byte firePacket[] = {playerId, teamId, damage};
 byte firePacketSize = INIT_FIRE_PACKET_SIZE;
 
-//    Timing:
+//-----------------------------------------------------------------------------
+
+// Timing Variables:
 volatile short reloadInterruptTime = INITIALIZE;
 volatile bool isDelayed = false;
 
