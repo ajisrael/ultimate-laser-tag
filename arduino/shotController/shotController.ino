@@ -113,6 +113,7 @@ byte maxAmmo            = INITIALIZE;
 volatile byte ammoCount = INITIALIZE;
 short reloadDelay       = INITIALIZE;
 short firingDelay       = INITIALIZE;
+short muzzleFlashDelay  = INITIALIZE;
 byte firePacket[] = {playerId, teamId, damage};
 byte firePacketLength = INIT_FIRE_PACKET_LENGTH;
 
@@ -121,6 +122,7 @@ byte firePacketLength = INIT_FIRE_PACKET_LENGTH;
 // Timing Variables:
 volatile short reloadInterruptTime = INITIALIZE;
 volatile short shotInterruptTime   = INITIALIZE;
+volatile short muzzleFlashTime   = INITIALIZE;
 volatile bool isDelayed = false;
 
 //-----------------------------------------------------------------------------
@@ -157,6 +159,11 @@ void loop()
   if (millis() - reloadInterruptTime > reloadDelay) // Check if gun should be 
   {                                                 // delayed since last reload
     isDelayed = false;                              // Turns off delay flag
+  }
+
+  if (millis() - muzzleFlashTime > muzzleFlashDelay)
+  {
+    turnOffMuzzleFlash();
   }
 }
 
@@ -385,8 +392,42 @@ void fireShot()
 }
 
 void xmitPacket(){}
+
 void immitateGunFire(){}
-void flashMuzzleLight(){}
+
+void flashMuzzleLight()
+//-----------------------------------------------------------------------------
+// Func:  Flashes the muzzle light with the color of the player's team.
+// Meth:  Loops through teamPins array. Any values that are not -1 are active
+//        and the LED for that pin is turned on. The time is then captured to
+//        later turn off the muzzle flash inside the loop() function.
+//-----------------------------------------------------------------------------
+{
+  for (int i = 0; i < teamPinsLength; i++) // For each LED in muzzle
+  {
+    if (teamPins[i] != initialValue)       // If it is active
+    {
+      digitalWrite(teamPins[i], HIGH);     // Turn it on
+    }
+  }
+  muzzleFlashTime = millis();              // Capture time to turn off later
+}
+
+void turnOffMuzzleFlash()
+//-----------------------------------------------------------------------------
+// Func:  Turns off all active muzzle LEDs.
+// Meth:  Loops through teamPins array. Any values that are not -1 are active
+//        and the LED for that pin is turned off.
+//-----------------------------------------------------------------------------
+{
+  for (int i = 0; i < teamPinsLength; i++) // For each LED in muzzle
+  {
+    if (teamPins[i] != initialValue)       // If it is active
+    {
+      digitalWrite(teamPins[i], LOW);      // Turn it off
+    }
+  }
+}
 
 void playSound(byte soundCode)
 //-----------------------------------------------------------------------------
