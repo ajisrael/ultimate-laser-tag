@@ -11,6 +11,13 @@
 //       EMPTY                 Sound code for indicating empty magazine
 //       FULL                  Sound code for indicating full ammo
 //       RELOAD_BUTTON_PIN     Pin the reload button is connected to
+//       RED_LED_PIN           Pin for red lead of RGB LED
+//       GREEN_LED_PIN         Pin for green lead of RGB LED
+//       BLUE_LED_PIN          Pin for blue lead of RGB LED
+//       USE_RED_LED           Mask to determine if red LED should be used
+//       USE_GREEN_LED         Mask to determine if green LED should be used
+//       USE_BLUE_LED          Mask to determine if blue LED should be used
+//       TEAM_PINS_LENGTH      Length of teamPins array
 //    In Game:
 //       INIT_FIRE_PACKET_LENGTH Inital length of firePacket
 //    Test:
@@ -26,9 +33,14 @@
 //       empty           = Sound code for empty magazine
 //       full            = Sound code for full ammo
 //       reloadButtonPin = Pin the reload button is connected to
+//       redLEDPin       = Pin red LED is connected to
+//       greenLEDPin     = Pin green LED is connected to
+//       blueLEDPin      = Pin blue LED is connected to
+//       teamPinsLength  = Length of teamPins array
 //    In Game:
 //       playerId       = The player's id
-//       teamId         = The id of the player's team
+//       teamId         = The id of the player's team 
+//       teamPins       = The active pins for team color of muzzle flash
 //       damage         = The damage dealt to another player when hit
 //       ammoCount      = The current amount of ammo available
 //       maxAmmo        = The maximum amount of ammo allowed for the current gun
@@ -52,6 +64,13 @@
 #define EMPTY                0x00
 #define FULL                 0x03
 #define RELOAD_BUTTON_PIN       2
+#define RED_LED_PIN             4
+#define GREEN_LED_PIN           7
+#define BLUE_LED_PIN            8
+#define USE_RED_LED          0x01 // 0000 0001
+#define USE_GREEN_LED        0x02 // 0000 0010
+#define USE_BLUE_LED         0x04 // 0000 0100
+#define TEAM_PINS_LENGTH        3
 
 //    Init In Game variables:
 #define INIT_FIRE_PACKET_LENGTH   3
@@ -59,7 +78,7 @@
 //    Init Testing variables:
 #define INITIALIZE             -1
 #define TEST_PLAYER_ID         10
-#define TEST_TEAM_ID           10
+#define TEST_TEAM_ID         0x01
 #define TEST_DAMAGE            10
 #define TEST_AMMO_COUNT        10
 #define TEST_MAX_AMMO          10
@@ -75,6 +94,10 @@ const byte full   = FULL;
 
 //    Pins:
 const byte reloadButtonPin = RELOAD_BUTTON_PIN;
+const byte redLEDPin   = RED_LED_PIN;
+const byte greenLEDPin = GREEN_LED_PIN;
+const byte blueLEDPin  = BLUE_LED_PIN;
+const byte teamPinsLength = TEAM_PINS_LENGTH;
 
 //-----------------------------------------------------------------------------
 
@@ -82,6 +105,7 @@ const byte reloadButtonPin = RELOAD_BUTTON_PIN;
 //    Player Data:
 byte playerId = INITIALIZE;
 byte teamId = INITIALIZE;
+byte teamPins[] = {INITIALIZE, INITIALIZE, INITIALIZE};
 
 //    Gun Profile:
 byte damage             = INITIALIZE;
@@ -162,12 +186,43 @@ void receivePlayerData()
   if (isolatedTest)             // Check for testing in isolation
   {
     playerId = TEST_PLAYER_ID;  // Set global variables with test values
-    teamId = TEST_TEAM_ID;
+    teamId = TEST_TEAM_ID;    
   } 
   else                          // Otherwise call main board for data
   {
     if (consoleDebug) Serial.println("Requesting player data from main board.");
   }
+
+  setTeamLEDPins(teamId);       // Set pins for muzzle flash based on team
+
+  if (consoleDebug)
+  {
+    Serial.print("Team Id: ");
+    Serial.print(teamId);
+    Serial.print(" + R:");
+    Serial.print(teamPins[0]);
+    Serial.print(" G:");
+    Serial.print(teamPins[1]);
+    Serial.print(" B:");
+    Serial.println(teamPins[2]);
+  }  
+}
+
+void setTeamLEDPins(byte currentTeamId)
+//-----------------------------------------------------------------------------
+// Func:  Sets the pins to use for the muzzle flash based on the team color
+// Meth:  Resets the teamPins array, then uses the USE_<color>_LED masks to 
+//        determine the pins that should be enabled to flash the correct color
+//        out the muzzle when a shot is taken.
+//-----------------------------------------------------------------------------
+{
+  for (int i = 0; i < teamPinsLength; i++) // Reset each teamPin index
+  { 
+    teamPins[i] = INITIALIZE;              // back to its initial value
+  }
+  if (currentTeamId & USE_RED_LED)  { teamPins[0] = redLEDPin;   } // set red
+  if (currentTeamId & USE_GREEN_LED){ teamPins[1] = greenLEDPin; } // set green
+  if (currentTeamId & USE_BLUE_LED) { teamPins[2] = blueLEDPin;  } // set blue
 }
 
 void receiveGunProfile() 
