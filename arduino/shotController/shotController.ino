@@ -85,9 +85,9 @@
 #define TEST_DAMAGE            10
 #define TEST_AMMO_COUNT        10
 #define TEST_MAX_AMMO          10
-#define TEST_RELOAD_DELAY_MS 1000
-#define TEST_FIRING_DELAY_MS 1000
-#define TEST_MUZZLE_DELAY_MS 1000
+#define TEST_RELOAD_DELAY_MS 3000
+#define TEST_FIRING_DELAY_MS 3000
+#define TEST_MUZZLE_DELAY_MS 3000
 
 //-----------------------------------------------------------------------------
 
