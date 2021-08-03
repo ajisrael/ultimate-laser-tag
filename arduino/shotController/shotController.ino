@@ -9,6 +9,7 @@
 // Defn: 
 //    Const:
 //       EMPTY                 Sound code for indicating empty magazine
+//       SHOT                  Sound code for indicating shot taken
 //       FULL                  Sound code for indicating full ammo
 //       RELOAD_BUTTON_PIN     Pin the reload button is connected to
 //       RED_LED_PIN           Pin for red lead of RGB LED
@@ -33,6 +34,7 @@
 // Vars: 
 //    Const:
 //       empty           = Sound code for empty magazine
+//       shot            = Sound code for shot taken
 //       full            = Sound code for full ammo
 //       reloadButtonPin = Pin the reload button is connected to
 //       redLEDPin       = Pin red LED is connected to
@@ -65,6 +67,7 @@
 //    Init Constant variables:
 //        Sound Codes:
 #define EMPTY                0x00
+#define SHOT                 0x01
 #define FULL                 0x03
 //        Pins:
 #define RELOAD_BUTTON_PIN       2
@@ -98,6 +101,7 @@
 // Constant Variables:
 //    Sound Codes:
 const byte empty  = EMPTY;
+const byte shot   = SHOT;
 const byte full   = FULL;
 
 //    Pins:
@@ -411,18 +415,28 @@ void shoot()
 
 void fireShot()
 //-----------------------------------------------------------------------------
-// Func:  Transmits IR data, immitates gun fire, and flashes the muzzle light.
+// Func:  Transmits IR data, immitates gun fire, flashes the muzzle light, and
+//        decrements the ammoCount.
 // Meth:  Calls other methods to execute the functionality.     
 //-----------------------------------------------------------------------------
 {
   xmitPacket();
   immitateGunFire();
-  flashMuzzleLight();
+  if (ammoCount > 0) { ammoCount--; }
 }
 
 void xmitPacket(){}
 
-void immitateGunFire(){}
+void immitateGunFire()
+//-----------------------------------------------------------------------------
+// Func:  Immitates gun fire by playing the shot sound and flashing the muzzle.
+// Meth:  Tells the main board to play the shot sound and flashes the muzzle
+//        by calling flashMuzzleLight() method.
+//-----------------------------------------------------------------------------
+{
+  playSound(shot);
+  flashMuzzleLight();
+}
 
 void flashMuzzleLight()
 //-----------------------------------------------------------------------------
