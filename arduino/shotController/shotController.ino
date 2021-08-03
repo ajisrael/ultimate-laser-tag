@@ -12,7 +12,7 @@
 //       FULL                  Sound code for indicating full ammo
 //       RELOAD_BUTTON_PIN     Pin the reload button is connected to
 //    In Game:
-//       INIT_FIRE_PACKET_SIZE Inital size of firePacket
+//       INIT_FIRE_PACKET_LENGTH Inital length of firePacket
 //    Test:
 //       INITIALIZE            Initial value for all global variables
 //       TEST_PLAYER_ID        playerId test value when testing in isolation
@@ -35,7 +35,7 @@
 //       reloadDelay    = The amount of time the gun delays from reloading
 //       firingDelay    = The amount of time the gun delays from firing
 //       firePacket     = Array of data sent in packet when trigger is pulled
-//       firePacketSize = Size of firePacket
+//       firePacketLength = Length of firePacket
 //    Timing:
 //       reloadInterruptTime = timestamp of last reload()
 //       shotInterruptTime   = timestamp of last shot()
@@ -54,7 +54,7 @@
 #define RELOAD_BUTTON_PIN       2
 
 //    Init In Game variables:
-#define INIT_FIRE_PACKET_SIZE   3
+#define INIT_FIRE_PACKET_LENGTH   3
 
 //    Init Testing variables:
 #define INITIALIZE             -1
@@ -90,7 +90,7 @@ volatile byte ammoCount = INITIALIZE;
 short reloadDelay       = INITIALIZE;
 short firingDelay       = INITIALIZE;
 byte firePacket[] = {playerId, teamId, damage};
-byte firePacketSize = INIT_FIRE_PACKET_SIZE;
+byte firePacketLength = INIT_FIRE_PACKET_LENGTH;
 
 //-----------------------------------------------------------------------------
 
@@ -242,7 +242,7 @@ bool wasInitializationSuccessful()
   else if (firingDelay == initialValue) { wasSuccessful = false; }
   
   // Check if fire packet was built properly
-  for (byte i = 0; i < firePacketSize; i++) 
+  for (byte i = 0; i < firePacketLength; i++) 
   {
     if (firePacket[i]  == initialValue) { wasSuccessful = false; }
   }
