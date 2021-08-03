@@ -28,6 +28,8 @@
 //       TEST_AMMO_COUNT       ammoCount test value when testing in isolation
 //       TEST_MAX_AMMO         maxAmmo test value when testing in isolation
 //       TEST_RELOAD_DELAY_MS  reloadDelay test value when testing in isolation
+//       TEST_FIRING_DELAY_MS  firingDelay test value when testing in isolation
+//       TEST_MUZZLE_DELAY_MS  muzzleDelay test value when testing in isolation
 // Vars: 
 //    Const:
 //       empty           = Sound code for empty magazine
@@ -85,6 +87,7 @@
 #define TEST_MAX_AMMO          10
 #define TEST_RELOAD_DELAY_MS 1000
 #define TEST_FIRING_DELAY_MS 1000
+#define TEST_MUZZLE_DELAY_MS 1000
 
 //-----------------------------------------------------------------------------
 
@@ -115,7 +118,7 @@ byte maxAmmo            = INITIALIZE;
 volatile byte ammoCount = INITIALIZE;
 short reloadDelay       = INITIALIZE;
 short firingDelay       = INITIALIZE;
-short muzzleFlashDelay  = INITIALIZE;
+unsigned short muzzleDelay  = INITIALIZE;
 byte firePacket[] = {playerId, teamId, damage};
 byte firePacketLength = INIT_FIRE_PACKET_LENGTH;
 
@@ -163,7 +166,7 @@ void loop()
     isDelayed = false;                              // Turns off delay flag
   }
 
-  if (millis() - muzzleFlashTime > muzzleFlashDelay)
+  if (millis() - muzzleFlashTime > muzzleDelay)
   {
     turnOffMuzzleFlash();
   }
@@ -248,6 +251,7 @@ void receiveGunProfile()
     maxAmmo = TEST_MAX_AMMO;
     reloadDelay = TEST_RELOAD_DELAY_MS;
     firingDelay = TEST_FIRING_DELAY_MS;
+    muzzleDelay = TEST_MUZZLE_DELAY_MS;
   } 
   else                                  // Otherwise call main board for data
   {
