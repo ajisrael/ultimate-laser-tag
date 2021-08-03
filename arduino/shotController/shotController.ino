@@ -4,7 +4,7 @@
 // Meth: On startup the Shot Controller board requests the user and gun profile
 //       from the main board. Once these have been initialized the board then
 //       waits for an interupt either from the trigger or the reload button.
-//       The trigger starts the initiateShot() ISR and the reload button starts
+//       The trigger starts the shoot() ISR and the reload button starts
 //       the reload() ISR.
 // Defn: 
 //    Const:
@@ -64,6 +64,7 @@
 #define EMPTY                0x00
 #define FULL                 0x03
 #define RELOAD_BUTTON_PIN       2
+#define SHOOT_BUTTON_PIN        3
 #define RED_LED_PIN             4
 #define GREEN_LED_PIN           7
 #define BLUE_LED_PIN            8
@@ -94,6 +95,7 @@ const byte full   = FULL;
 
 //    Pins:
 const byte reloadButtonPin = RELOAD_BUTTON_PIN;
+const byte shootButtonPin  = SHOOT_BUTTON_PIN;
 const byte redLEDPin   = RED_LED_PIN;
 const byte greenLEDPin = GREEN_LED_PIN;
 const byte blueLEDPin  = BLUE_LED_PIN;
@@ -350,6 +352,24 @@ void reload()
     playSound(full);                // Notify main board magazine is full
     if (consoleDebug) Serial.println("Magazine is full");
   }
+}
+
+void initializeShoot()
+//-----------------------------------------------------------------------------
+// Func:  Sets pin mode for shoot button and attaches the shoot() ISR to the
+//        shoot button.
+// Meth:  Sets the pin mode for the shoot button as a PULLUP. With the PULLUP
+//        set, the interupt is attached to only trigger on the falling edge 
+//        when the shoot button breaks the connection.
+//-----------------------------------------------------------------------------
+{
+  pinMode(shootButtonPin, INPUT_PULLUP);                // Set button pin mode
+
+  attachInterrupt(                                      // Set shoot() ISR to
+    digitalPinToInterrupt(shootButtonPin),              // exec on FALLING
+    shoot, FALLING);                                    // edge
+  
+  if (consoleDebug) Serial.println("Shoot initialized");
 }
 
 void shoot()
