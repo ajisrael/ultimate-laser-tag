@@ -4,14 +4,23 @@
 // Meth: On startup the Shot Controller board requests the user and gun profile
 //       from the main board. Once these have been initialized the board then
 //       waits for an interupt either from the trigger or the reload button.
-//       The trigger starts the initiateShot() ISR and the reload button starts
+//       The trigger starts the shoot() ISR and the reload button starts
 //       the reload() ISR.
 // Defn: 
 //    Const:
+//       EMPTY                 Sound code for indicating empty magazine
+//       SHOT                  Sound code for indicating shot taken
 //       FULL                  Sound code for indicating full ammo
 //       RELOAD_BUTTON_PIN     Pin the reload button is connected to
+//       RED_LED_PIN           Pin for red lead of RGB LED
+//       GREEN_LED_PIN         Pin for green lead of RGB LED
+//       BLUE_LED_PIN          Pin for blue lead of RGB LED
+//       USE_RED_LED           Mask to determine if red LED should be used
+//       USE_GREEN_LED         Mask to determine if green LED should be used
+//       USE_BLUE_LED          Mask to determine if blue LED should be used
+//       TEAM_PINS_LENGTH      Length of teamPins array
 //    In Game:
-//       INIT_FIRE_PACKET_SIZE Inital size of firePacket
+//       INIT_FIRE_PACKET_LENGTH Inital length of firePacket
 //    Test:
 //       INITIALIZE            Initial value for all global variables
 //       TEST_PLAYER_ID        playerId test value when testing in isolation
@@ -20,46 +29,90 @@
 //       TEST_AMMO_COUNT       ammoCount test value when testing in isolation
 //       TEST_MAX_AMMO         maxAmmo test value when testing in isolation
 //       TEST_RELOAD_DELAY_MS  reloadDelay test value when testing in isolation
-// Vars: playerId     = The player's id
-//       teamId       = The id of the player's team
-//       damage       = The damage dealt to another player when hit
-//       ammoCount    = The current amount of ammo available
-//       maxAmmo      = The maximum amount of ammo allowed for the current gun
-//       reloadDelay  = The amount of time the gun delays from reloading
-//       firingDelay  = The amount of time the gun delays from firing
-//       firePacket   = Array of data sent in packet when trigger is pulled
-//       isolatedTest = Enables test variables when not connected to main board 
-//       consoleDebug = Enables console output for testing
-//       initialValue = Variable to hold value of INITIALIZE for comparison
+//       TEST_FIRING_DELAY_MS  firingDelay test value when testing in isolation
+//       TEST_MUZZLE_DELAY_MS  muzzleDelay test value when testing in isolation
+// Vars: 
+//    Const:
+//       empty           = Sound code for empty magazine
+//       shot            = Sound code for shot taken
+//       full            = Sound code for full ammo
+//       reloadButtonPin = Pin the reload button is connected to
+//       redLEDPin       = Pin red LED is connected to
+//       greenLEDPin     = Pin green LED is connected to
+//       blueLEDPin      = Pin blue LED is connected to
+//       teamPinsLength  = Length of teamPins array
+//    In Game:
+//       playerId       = The player's id
+//       teamId         = The id of the player's team 
+//       teamPins       = The active pins for team color of muzzle flash
+//       damage         = The damage dealt to another player when hit
+//       ammoCount      = The current amount of ammo available
+//       maxAmmo        = The maximum amount of ammo allowed for the current gun
+//       reloadDelay    = The amount of time the gun delays from reloading
+//       firingDelay    = The amount of time the gun delays from firing
+//       firePacket     = Array of data sent in packet when trigger is pulled
+//       firePacketLength = Length of firePacket
+//    Timing:
+//       reloadInterruptTime = timestamp of last reload()
+//       shotInterruptTime   = timestamp of last shot()
+//       isDelayed           = Keeps track of delay state of gun
+//       shotTaken           = Keeps track of recent action being shooting
+//       reloaded            = Keeps track of recent action being reloading
+//    Test:
+//       isolatedTest   = Enables test vars when not connected to main board 
+//       consoleDebug   = Enables console output for testing
+//       initialValue   = Variable to hold value of INITIALIZE for comparison
 //-----------------------------------------------------------------------------
 
 // Definitions:
 
 //    Init Constant variables:
+//        Sound Codes:
+#define EMPTY                0x00
+#define SHOT                 0x01
 #define FULL                 0x03
+//        Pins:
 #define RELOAD_BUTTON_PIN       2
+#define SHOOT_BUTTON_PIN        3
+#define RED_LED_PIN             4
+#define GREEN_LED_PIN           7
+#define BLUE_LED_PIN            8
+//        Masks:
+#define USE_RED_LED          0x01 // 0000 0001
+#define USE_GREEN_LED        0x02 // 0000 0010
+#define USE_BLUE_LED         0x04 // 0000 0100
+//        Other:
+#define TEAM_PINS_LENGTH        3
 
 //    Init In Game variables:
-#define INIT_FIRE_PACKET_SIZE   3
+#define INIT_FIRE_PACKET_LENGTH 3
 
 //    Init Testing variables:
 #define INITIALIZE             -1
 #define TEST_PLAYER_ID         10
-#define TEST_TEAM_ID           10
+#define TEST_TEAM_ID         0x01
 #define TEST_DAMAGE            10
 #define TEST_AMMO_COUNT        10
 #define TEST_MAX_AMMO          10
-#define TEST_RELOAD_DELAY_MS 1000
-#define TEST_FIRING_DELAY_MS 1000
+#define TEST_RELOAD_DELAY_MS 3000
+#define TEST_FIRING_DELAY_MS 3000
+#define TEST_MUZZLE_DELAY_MS 3000
 
 //-----------------------------------------------------------------------------
 
 // Constant Variables:
 //    Sound Codes:
+const byte empty  = EMPTY;
+const byte shot   = SHOT;
 const byte full   = FULL;
 
 //    Pins:
 const byte reloadButtonPin = RELOAD_BUTTON_PIN;
+const byte shootButtonPin  = SHOOT_BUTTON_PIN;
+const byte redLEDPin   = RED_LED_PIN;
+const byte greenLEDPin = GREEN_LED_PIN;
+const byte blueLEDPin  = BLUE_LED_PIN;
+const byte teamPinsLength = TEAM_PINS_LENGTH;
 
 //-----------------------------------------------------------------------------
 
@@ -67,19 +120,27 @@ const byte reloadButtonPin = RELOAD_BUTTON_PIN;
 //    Player Data:
 byte playerId = INITIALIZE;
 byte teamId = INITIALIZE;
+byte teamPins[] = {INITIALIZE, INITIALIZE, INITIALIZE};
 
 //    Gun Profile:
 byte damage             = INITIALIZE;
 byte maxAmmo            = INITIALIZE;
 volatile byte ammoCount = INITIALIZE;
-short reloadDelay       = INITIALIZE;
-short firingDelay       = INITIALIZE;
+unsigned short reloadDelay = INITIALIZE;
+unsigned short firingDelay = INITIALIZE;
+unsigned short muzzleDelay = INITIALIZE;
 byte firePacket[] = {playerId, teamId, damage};
-byte firePacketSize = INIT_FIRE_PACKET_SIZE;
+byte firePacketLength = INIT_FIRE_PACKET_LENGTH;
 
-//    Timing:
-volatile short reloadInterruptTime = INITIALIZE;
+//-----------------------------------------------------------------------------
+
+// Timing Variables:
+volatile unsigned long reloadInterruptTime = INITIALIZE;
+volatile unsigned long shotInterruptTime   = INITIALIZE;
+volatile unsigned long muzzleFlashTime     = INITIALIZE;
 volatile bool isDelayed = false;
+volatile bool shotTaken = false;
+volatile bool reloaded  = false;
 
 //-----------------------------------------------------------------------------
 
@@ -96,12 +157,16 @@ void setup()
 // Meth:  Initializes Shot Controller global variables with 
 //        initializeShotController() method and notifies main board if 
 //        successful or not. Followed by initialization of reload feature
-//        through initializeReload() method.
+//        through initializeReload() method and initialization of shoot feature
+//        through initializeShoot() method.
 //-----------------------------------------------------------------------------
 {
   if (consoleDebug) Serial.begin(9600); // Initialize Serial Monitor if debug
+  noInterrupts();  
   initializeShotController();           // Init global vars and notify state
   initializeReload();                   // Init reload feature
+  initializeShoot();                    // Init shoot feature
+  interrupts();  
 }
 
 void loop() 
@@ -112,9 +177,27 @@ void loop()
 //        flag (isDelayed) is turned off.
 //-----------------------------------------------------------------------------
 {
-  if (millis() - reloadInterruptTime > reloadDelay) // Check if gun should be 
-  {                                                 // delayed since last reload
-    isDelayed = false;                              // Turns off delay flag
+  if (                      // Check if gun should be delayed since last reload
+      (isDelayed == true) && (shotTaken == false) &&
+      (millis() - reloadInterruptTime > reloadDelay)
+     )  
+  {
+    isDelayed = false;                              // Turn off delay flag
+    reloaded  = false;
+  }
+
+  if (                      // Check if gun should be delayed since last shot
+      (isDelayed == true) && (reloaded == false) &&
+      (millis() - shotInterruptTime > firingDelay)
+     )  
+  {
+    isDelayed = false;                              // Turn off delay flag
+    shotTaken = false;    
+  }
+
+  if (millis() - muzzleFlashTime > muzzleDelay)
+  {
+    turnOffMuzzleFlash();
   }
 }
 
@@ -144,12 +227,43 @@ void receivePlayerData()
   if (isolatedTest)             // Check for testing in isolation
   {
     playerId = TEST_PLAYER_ID;  // Set global variables with test values
-    teamId = TEST_TEAM_ID;
+    teamId = TEST_TEAM_ID;    
   } 
   else                          // Otherwise call main board for data
   {
     if (consoleDebug) Serial.println("Requesting player data from main board.");
   }
+
+  setTeamLEDPins(teamId);       // Set pins for muzzle flash based on team
+
+  if (consoleDebug)
+  {
+    Serial.print("Team Id: ");
+    Serial.print(teamId);
+    Serial.print(" + R:");
+    Serial.print(teamPins[0]);
+    Serial.print(" G:");
+    Serial.print(teamPins[1]);
+    Serial.print(" B:");
+    Serial.println(teamPins[2]);
+  }  
+}
+
+void setTeamLEDPins(byte currentTeamId)
+//-----------------------------------------------------------------------------
+// Func:  Sets the pins to use for the muzzle flash based on the team color
+// Meth:  Resets the teamPins array, then uses the USE_<color>_LED masks to 
+//        determine the pins that should be enabled to flash the correct color
+//        out the muzzle when a shot is taken.
+//-----------------------------------------------------------------------------
+{
+  for (int i = 0; i < teamPinsLength; i++) // Reset each teamPin index
+  { 
+    teamPins[i] = INITIALIZE;              // back to its initial value
+  }
+  if (currentTeamId & USE_RED_LED)  { teamPins[0] = redLEDPin;   } // set red
+  if (currentTeamId & USE_GREEN_LED){ teamPins[1] = greenLEDPin; } // set green
+  if (currentTeamId & USE_BLUE_LED) { teamPins[2] = blueLEDPin;  } // set blue
 }
 
 void receiveGunProfile() 
@@ -166,6 +280,7 @@ void receiveGunProfile()
     maxAmmo = TEST_MAX_AMMO;
     reloadDelay = TEST_RELOAD_DELAY_MS;
     firingDelay = TEST_FIRING_DELAY_MS;
+    muzzleDelay = TEST_MUZZLE_DELAY_MS;
   } 
   else                                  // Otherwise call main board for data
   {
@@ -224,7 +339,7 @@ bool wasInitializationSuccessful()
   else if (firingDelay == initialValue) { wasSuccessful = false; }
   
   // Check if fire packet was built properly
-  for (byte i = 0; i < firePacketSize; i++) 
+  for (byte i = 0; i < firePacketLength; i++) 
   {
     if (firePacket[i]  == initialValue) { wasSuccessful = false; }
   }
@@ -257,18 +372,127 @@ void reload()
 // Meth:  First checks if gun is not delayed, then reloads the ammo. Followed
 //        by notifying the main board that the magazine is now full and then
 //        delaying the gun.
-// Voli:  ammoCount           - reload() : set ammoCount to maxAmmo
-//        isDelayed           - reload() : set isDelayed to true
+// Voli:  isDelayed           - reload() : set isDelayed to true
+//        reloaded            - reload() : set reloaded to true
 //        reloadInterruptTime - reload() : capture timestamp
+//        ammoCount           - reload() : set ammoCount to maxAmmo
 //-----------------------------------------------------------------------------
 {
   if (isDelayed == false) // Make sure gun is not delayed
   {
     isDelayed = true;               // Set delay flag
+    reloaded  = true;               // Set reload flag
     reloadInterruptTime = millis(); // Get ISR timestamp for loop()
     ammoCount = maxAmmo;            // Reload ammo
     playSound(full);                // Notify main board magazine is full
     if (consoleDebug) Serial.println("Magazine is full");
+  }
+}
+
+void initializeShoot()
+//-----------------------------------------------------------------------------
+// Func:  Sets pin mode for shoot button and attaches the shoot() ISR to the
+//        shoot button.
+// Meth:  Sets the pin mode for the shoot button as a PULLUP. With the PULLUP
+//        set, the interupt is attached to only trigger on the falling edge 
+//        when the shoot button breaks the connection.
+//-----------------------------------------------------------------------------
+{
+  pinMode(shootButtonPin, INPUT_PULLUP);                // Set button pin mode
+
+  attachInterrupt(                                      // Set shoot() ISR to
+    digitalPinToInterrupt(shootButtonPin),              // exec on FALLING
+    shoot, FALLING);                                    // edge
+  
+  if (consoleDebug) Serial.println("Shoot initialized");
+}
+
+void shoot()
+//-----------------------------------------------------------------------------
+// Func:  ISR: Shoots a laser beam with encoded data when trigger is pressed.
+// Meth:  First checks if gun is not delayed, then sets timing variables.
+//        Proceeds to check for ammo. If there is none, then plays empty sound.
+//        Otherwise, calls fireShot().
+// Voli:  isDelayed           - shoot()    : set isDelayed to true
+//        shotTaken           - shoot()    : set shotTaken to true
+//        shotInterruptTime   - shoot()    : capture timestamp
+//        ammoCount           - fireShot() : decrement for shot
+//-----------------------------------------------------------------------------
+{
+  if (isDelayed == false)
+  {
+    isDelayed = true;
+    shotTaken = true;
+    shotInterruptTime = millis();
+    if (ammoCount == 0)
+    {
+      playSound(empty);
+      if (consoleDebug) Serial.println("Magazine is empty");
+    }
+    else
+    {
+      fireShot();
+      if (consoleDebug) Serial.println("Shot fired");
+    }
+  }
+}
+
+void fireShot()
+//-----------------------------------------------------------------------------
+// Func:  Transmits IR data, immitates gun fire, flashes the muzzle light, and
+//        decrements the ammoCount.
+// Meth:  Calls other methods to execute the functionality.     
+//-----------------------------------------------------------------------------
+{
+  xmitPacket();
+  immitateGunFire();
+  if (ammoCount > 0) { ammoCount--; }
+}
+
+void xmitPacket(){}
+
+void immitateGunFire()
+//-----------------------------------------------------------------------------
+// Func:  Immitates gun fire by playing the shot sound and flashing the muzzle.
+// Meth:  Tells the main board to play the shot sound and flashes the muzzle
+//        by calling flashMuzzleLight() method.
+//-----------------------------------------------------------------------------
+{
+  playSound(shot);
+  flashMuzzleLight();
+}
+
+void flashMuzzleLight()
+//-----------------------------------------------------------------------------
+// Func:  Flashes the muzzle light with the color of the player's team.
+// Meth:  Loops through teamPins array. Any values that are not -1 are active
+//        and the LED for that pin is turned on. The time is then captured to
+//        later turn off the muzzle flash inside the loop() function.
+//-----------------------------------------------------------------------------
+{
+  for (int i = 0; i < teamPinsLength; i++) // For each LED in muzzle
+  {
+    if (teamPins[i] != initialValue)       // If it is active
+    {
+      digitalWrite(teamPins[i], HIGH);     // Turn it on
+    }
+  }
+  muzzleFlashTime = millis();              // Capture time to turn off later
+}
+
+void turnOffMuzzleFlash()
+//-----------------------------------------------------------------------------
+// Func:  Turns off all active muzzle LEDs.
+// Meth:  Loops through teamPins array. Any values that are not -1 are active
+//        and the LED for that pin is turned off.
+//-----------------------------------------------------------------------------
+{
+  for (int i = 0; i < teamPinsLength; i++) // For each LED in muzzle
+  {
+    if (teamPins[i] != initialValue)       // If it is active
+    {
+      digitalWrite(teamPins[i], LOW);      // Turn it off
+    }
   }
 }
 
