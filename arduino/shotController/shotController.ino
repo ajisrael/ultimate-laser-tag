@@ -56,6 +56,8 @@
 //       reloadInterruptTime = timestamp of last reload()
 //       shotInterruptTime   = timestamp of last shot()
 //       isDelayed           = Keeps track of delay state of gun
+//       shotTaken           = Keeps track of recent action being shooting
+//       reloaded            = Keeps track of recent action being reloading
 //    Test:
 //       isolatedTest   = Enables test vars when not connected to main board 
 //       consoleDebug   = Enables console output for testing
@@ -137,6 +139,8 @@ volatile unsigned long reloadInterruptTime = INITIALIZE;
 volatile unsigned long shotInterruptTime   = INITIALIZE;
 volatile unsigned long muzzleFlashTime     = INITIALIZE;
 volatile bool isDelayed = false;
+volatile bool shotTaken = false;
+volatile bool reloaded  = false;
 
 //-----------------------------------------------------------------------------
 
@@ -173,9 +177,22 @@ void loop()
 //        flag (isDelayed) is turned off.
 //-----------------------------------------------------------------------------
 {
-  if (millis() - reloadInterruptTime > reloadDelay) // Check if gun should be 
-  {                                                 // delayed since last reload
-    isDelayed = false;                              // Turns off delay flag
+  if (                      // Check if gun should be delayed since last reload
+      (isDelayed == true) && (shotTaken == false) &&
+      (millis() - reloadInterruptTime > reloadDelay)
+     )  
+  {
+    isDelayed = false;                              // Turn off delay flag
+    reloaded  = false;
+  }
+
+  if (                      // Check if gun should be delayed since last shot
+      (isDelayed == true) && (reloaded == false) &&
+      (millis() - shotInterruptTime > firingDelay)
+     )  
+  {
+    isDelayed = false;                              // Turn off delay flag
+    shotTaken = false;    
   }
 
   if (millis() - muzzleFlashTime > muzzleDelay)
@@ -356,6 +373,7 @@ void reload()
 //        by notifying the main board that the magazine is now full and then
 //        delaying the gun.
 // Voli:  isDelayed           - reload() : set isDelayed to true
+//        reloaded            - reload() : set reloaded to true
 //        reloadInterruptTime - reload() : capture timestamp
 //        ammoCount           - reload() : set ammoCount to maxAmmo
 //-----------------------------------------------------------------------------
@@ -363,6 +381,7 @@ void reload()
   if (isDelayed == false) // Make sure gun is not delayed
   {
     isDelayed = true;               // Set delay flag
+    reloaded  = true;               // Set reload flag
     reloadInterruptTime = millis(); // Get ISR timestamp for loop()
     ammoCount = maxAmmo;            // Reload ammo
     playSound(full);                // Notify main board magazine is full
@@ -394,14 +413,16 @@ void shoot()
 // Meth:  First checks if gun is not delayed, then sets timing variables.
 //        Proceeds to check for ammo. If there is none, then plays empty sound.
 //        Otherwise, calls fireShot().
-// Voli:  isDelayed           - shoot() : set isDelayed to true
-//        shotInterruptTime   - shoot() : capture timestamp
-//        ammoCount           - shoot() : decrement for shot      
+// Voli:  isDelayed           - shoot()    : set isDelayed to true
+//        shotTaken           - shoot()    : set shotTaken to true
+//        shotInterruptTime   - shoot()    : capture timestamp
+//        ammoCount           - fireShot() : decrement for shot
 //-----------------------------------------------------------------------------
 {
   if (isDelayed == false)
   {
     isDelayed = true;
+    shotTaken = true;
     shotInterruptTime = millis();
     if (ammoCount == 0)
     {
