@@ -161,6 +161,7 @@ void setup()
   noInterrupts();  
   initializeShotController();           // Init global vars and notify state
   initializeReload();                   // Init reload feature
+  initializeShoot();                    // Init shoot feature
   interrupts();  
 }
 
