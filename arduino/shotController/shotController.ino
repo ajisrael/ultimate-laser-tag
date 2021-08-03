@@ -158,8 +158,10 @@ void setup()
 //-----------------------------------------------------------------------------
 {
   if (consoleDebug) Serial.begin(9600); // Initialize Serial Monitor if debug
+  noInterrupts();  
   initializeShotController();           // Init global vars and notify state
   initializeReload();                   // Init reload feature
+  interrupts();  
 }
 
 void loop() 
