@@ -125,9 +125,9 @@ byte firePacketLength = INIT_FIRE_PACKET_LENGTH;
 //-----------------------------------------------------------------------------
 
 // Timing Variables:
-volatile short reloadInterruptTime = INITIALIZE;
-volatile short shotInterruptTime   = INITIALIZE;
-volatile short muzzleFlashTime   = INITIALIZE;
+volatile unsigned long reloadInterruptTime = INITIALIZE;
+volatile unsigned long shotInterruptTime   = INITIALIZE;
+volatile unsigned long muzzleFlashTime   = INITIALIZE;
 volatile bool isDelayed = false;
 
 //-----------------------------------------------------------------------------
