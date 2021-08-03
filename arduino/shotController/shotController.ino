@@ -63,20 +63,24 @@
 // Definitions:
 
 //    Init Constant variables:
+//        Sound Codes:
 #define EMPTY                0x00
 #define FULL                 0x03
+//        Pins:
 #define RELOAD_BUTTON_PIN       2
 #define SHOOT_BUTTON_PIN        3
 #define RED_LED_PIN             4
 #define GREEN_LED_PIN           7
 #define BLUE_LED_PIN            8
+//        Masks:
 #define USE_RED_LED          0x01 // 0000 0001
 #define USE_GREEN_LED        0x02 // 0000 0010
 #define USE_BLUE_LED         0x04 // 0000 0100
+//        Other:
 #define TEAM_PINS_LENGTH        3
 
 //    Init In Game variables:
-#define INIT_FIRE_PACKET_LENGTH   3
+#define INIT_FIRE_PACKET_LENGTH 3
 
 //    Init Testing variables:
 #define INITIALIZE             -1
@@ -116,9 +120,9 @@ byte teamPins[] = {INITIALIZE, INITIALIZE, INITIALIZE};
 byte damage             = INITIALIZE;
 byte maxAmmo            = INITIALIZE;
 volatile byte ammoCount = INITIALIZE;
-unsigned short reloadDelay       = INITIALIZE;
-unsigned short firingDelay       = INITIALIZE;
-unsigned short muzzleDelay  = INITIALIZE;
+unsigned short reloadDelay = INITIALIZE;
+unsigned short firingDelay = INITIALIZE;
+unsigned short muzzleDelay = INITIALIZE;
 byte firePacket[] = {playerId, teamId, damage};
 byte firePacketLength = INIT_FIRE_PACKET_LENGTH;
 
@@ -127,7 +131,7 @@ byte firePacketLength = INIT_FIRE_PACKET_LENGTH;
 // Timing Variables:
 volatile unsigned long reloadInterruptTime = INITIALIZE;
 volatile unsigned long shotInterruptTime   = INITIALIZE;
-volatile unsigned long muzzleFlashTime   = INITIALIZE;
+volatile unsigned long muzzleFlashTime     = INITIALIZE;
 volatile bool isDelayed = false;
 
 //-----------------------------------------------------------------------------
@@ -145,7 +149,8 @@ void setup()
 // Meth:  Initializes Shot Controller global variables with 
 //        initializeShotController() method and notifies main board if 
 //        successful or not. Followed by initialization of reload feature
-//        through initializeReload() method.
+//        through initializeReload() method and initialization of shoot feature
+//        through initializeShoot() method.
 //-----------------------------------------------------------------------------
 {
   if (consoleDebug) Serial.begin(9600); // Initialize Serial Monitor if debug
@@ -343,9 +348,9 @@ void reload()
 // Meth:  First checks if gun is not delayed, then reloads the ammo. Followed
 //        by notifying the main board that the magazine is now full and then
 //        delaying the gun.
-// Voli:  ammoCount           - reload() : set ammoCount to maxAmmo
-//        isDelayed           - reload() : set isDelayed to true
+// Voli:  isDelayed           - reload() : set isDelayed to true
 //        reloadInterruptTime - reload() : capture timestamp
+//        ammoCount           - reload() : set ammoCount to maxAmmo
 //-----------------------------------------------------------------------------
 {
   if (isDelayed == false) // Make sure gun is not delayed
