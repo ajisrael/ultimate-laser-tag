@@ -195,9 +195,9 @@ void loop()
     shotTaken = false;    
   }
 
-  if (millis() - muzzleFlashTime > muzzleDelay)
+  if (millis() - muzzleFlashTime > muzzleDelay)     // Muzzle flash complete
   {
-    turnOffMuzzleFlash();
+    turnOffMuzzleFlash();                           // Turn off active teamPins
   }
 }
 
@@ -214,7 +214,7 @@ void initializeShotController()
   receivePlayerData();
   receiveGunProfile();
   buildFirePacket();
-  notifyShotControllerState();
+  notifyShotControllerState();  // Check if initialization was successful
 }
 
 void receivePlayerData()
@@ -455,14 +455,14 @@ void immitateGunFire()
 //-----------------------------------------------------------------------------
 // Func:  Immitates gun fire by playing the shot sound and flashing the muzzle.
 // Meth:  Tells the main board to play the shot sound and flashes the muzzle
-//        by calling flashMuzzleLight() method.
+//        by calling turnOnMuzzleFlash() method.
 //-----------------------------------------------------------------------------
 {
   playSound(shot);
-  flashMuzzleLight();
+  turnOnMuzzleFlash();
 }
 
-void flashMuzzleLight()
+void turnOnMuzzleFlash()
 //-----------------------------------------------------------------------------
 // Func:  Flashes the muzzle light with the color of the player's team.
 // Meth:  Loops through teamPins array. Any values that are not -1 are active
