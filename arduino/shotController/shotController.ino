@@ -195,9 +195,9 @@ void loop()
     shotTaken = false;    
   }
 
-  if (millis() - muzzleFlashTime > muzzleDelay)
+  if (millis() - muzzleFlashTime > muzzleDelay)     // Muzzle flash complete
   {
-    turnOffMuzzleFlash();
+    turnOffMuzzleFlash();                           // Turn off active teamPins
   }
 }
 
@@ -214,7 +214,7 @@ void initializeShotController()
   receivePlayerData();
   receiveGunProfile();
   buildFirePacket();
-  notifyShotControllerState();
+  notifyShotControllerState();  // Check if initialization was successful
 }
 
 void receivePlayerData()
